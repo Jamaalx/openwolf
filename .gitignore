@@ -42,3 +42,6 @@ reframe/
 openwolf-icon.zip
 openwolf-blueprint.md
 openwolf-readme-prompt.md
+
+# pnpm build-script approval, local to this machine
+pnpm-workspace.yaml

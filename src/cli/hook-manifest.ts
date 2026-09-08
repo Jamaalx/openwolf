@@ -53,6 +53,53 @@ export function buildHookSettings(projectDir: string) {
   };
 }
 
+// ─── Global router registration (user-level settings) ────────────────────────
+
+/**
+ * Events the cross-project router subscribes to.
+ *
+ * The same set the per-project block covers, with the matchers flattened: the
+ * router re-derives the matcher from the target project's own registration, so
+ * registering per tool here would only mean spawning the router several times
+ * for one tool call.
+ */
+export const ROUTER_EVENTS = [
+  "SessionStart",
+  "UserPromptSubmit",
+  "PreToolUse",
+  "PostToolUse",
+  "PostToolBatch",
+  "PreCompact",
+  "Stop",
+  "SessionEnd",
+] as const;
+
+/**
+ * Build the ~/.claude/settings.json hook block for the router.
+ *
+ * Timeouts run higher than the per-project block because the router adds a
+ * process hop: it spawns the project's hooks and waits for them. A tool call
+ * that would have paid one node startup now pays two.
+ */
+export function buildRouterHookSettings(routerPath: string) {
+  const command = `node "${routerPath.replace(/\\/g, "/")}"`;
+  const entry = (timeout: number) => [
+    { matcher: "", hooks: [{ type: "command" as const, command, timeout }] },
+  ];
+  return {
+    hooks: {
+      SessionStart: entry(15),
+      UserPromptSubmit: entry(10),
+      PreToolUse: entry(10),
+      PostToolUse: entry(15),
+      PostToolBatch: entry(10),
+      PreCompact: entry(10),
+      Stop: entry(15),
+      SessionEnd: entry(15),
+    } as Record<string, Array<{ matcher: string; hooks: Array<{ type: "command"; command: string; timeout: number }> }>>,
+  };
+}
+
 /** Entry-point scripts settings.json invokes, in registration order. */
 export const HOOK_ENTRY_FILES = [
   "session-start.js",

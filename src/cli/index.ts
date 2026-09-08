@@ -84,6 +84,36 @@ export function createProgram(): Command {
     .option("--file", "Show full index detail for one path (description, symbols, ranges)")
     .action((query: string, opts: { file?: boolean }) => findCommand(query, opts));
 
+  const globalCmd = program
+    .command("global")
+    .description("Cross-project router: one OpenWolf for every session, wherever it starts");
+
+  globalCmd
+    .command("install")
+    .description("Register the router in ~/.claude/settings.json (all sessions, any cwd)")
+    .option("--root <paths...>", "Only route and auto-init under these directories (default: home)")
+    .option("--no-auto-init", "Do not initialize new git repos on first touch")
+    .action(async (opts: { root?: string[]; autoInit?: boolean }) => {
+      const { globalInstallCommand } = await import("./global-cmd.js");
+      globalInstallCommand({ roots: opts.root, noAutoInit: opts.autoInit === false });
+    });
+
+  globalCmd
+    .command("status")
+    .description("Show router registration, scope, and which projects it routed to")
+    .action(async () => {
+      const { globalStatusCommand } = await import("./global-cmd.js");
+      globalStatusCommand();
+    });
+
+  globalCmd
+    .command("uninstall")
+    .description("Remove the router hooks; per-project .wolf/ directories stay")
+    .action(async () => {
+      const { globalUninstallCommand } = await import("./global-cmd.js");
+      globalUninstallCommand();
+    });
+
   const daemon = program
     .command("daemon")
     .description("Daemon management");

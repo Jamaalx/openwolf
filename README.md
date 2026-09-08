@@ -70,6 +70,41 @@ openwolf init
 `init` detects the agents installed on your machine and wires each of them.
 Then use your agents as normal.
 
+### One install for every project
+
+`openwolf init` wires one project, and Claude Code only loads that wiring when
+the session starts inside it. If you work the way a lot of people do — one
+agent running from your home directory, across a dozen checkouts — none of it
+fires, and every new clone needs another `init` before it has any memory.
+
+```bash
+openwolf global install
+```
+
+That registers a router once, in `~/.claude/settings.json`. It runs in every
+session regardless of where you started, works out which project each hook
+call is actually about (the file being read, the edit target, the paths inside
+a Bash command), and forwards the hook to that project's `.wolf/`. Touch a file
+in another project and the next hook lands there. Touch a git repo that has no
+`.wolf` yet and it is initialized in the background — a fresh clone is covered
+without anyone remembering to run anything.
+
+| | |
+|---|---|
+| `openwolf global install` | Register the router. `--root <paths...>` to narrow its scope, `--no-auto-init` to only route projects you initialized by hand |
+| `openwolf global status` | Registration, scope, and which projects it routed to in the last day |
+| `openwolf global uninstall` | Remove the router hooks. Per-project `.wolf/` directories stay |
+
+Sessions started inside an initialized project keep using that project's own
+hooks — the router detects this and stands down, so nothing runs twice.
+Concurrent agents are tracked separately by session and agent id, so four
+subagents in four checkouts each keep their own project.
+
+Two limits worth knowing. The router adds a process hop per tool call, since it
+spawns the target project's hooks and waits for them. And a shell command with
+no path in it (`npm test`) routes to whatever the session last worked on, which
+is usually right and occasionally not.
+
 ## Supported agents
 
 | Agent | Integration |
