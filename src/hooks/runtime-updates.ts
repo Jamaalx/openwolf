@@ -40,7 +40,7 @@ export function updatePolicy(root:string):'compatible'|'all'|'notify'|'off' {
     cfg=parsed.openwolf;
   } catch(error) { if((error as NodeJS.ErrnoException).code!=='ENOENT')return 'off'; }
   if(cfg?.enabled===false || process.env.OPENWOLF_NO_UPDATE==='1')return 'off';
-  const mode=cfg?.updates?.mode ?? 'compatible';
+  const mode=cfg?.updates?.mode ?? 'notify'; // fork: fără auto-instalare de pe npm (ar înlocui router-ul global)
   return ['compatible','all','notify','off'].includes(mode)?mode:'off';
 }
 export function installedVersion(root:string):string {
