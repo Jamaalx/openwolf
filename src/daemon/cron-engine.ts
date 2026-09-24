@@ -2,7 +2,7 @@ import { archiveMemory } from "../hooks/memory-archive.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
-import cron from "node-cron";
+import cron, { type ScheduledTask } from "node-cron";
 import { readJSON, writeJSON, readText, writeText, appendText } from "../utils/fs-safe.js";
 import { scanProject } from "../scanner/anatomy-scanner.js";
 import { detectWaste } from "../tracker/waste-detector.js";
@@ -72,7 +72,7 @@ export class CronEngine {
   private projectRoot: string;
   private logger: Logger;
   private broadcast: (msg: unknown) => void;
-  private scheduledTasks: cron.ScheduledTask[] = [];
+  private scheduledTasks: ScheduledTask[] = [];
   private failureCounts = new Map<string, number>();
 
   constructor(
@@ -107,7 +107,10 @@ export class CronEngine {
 
   stop(): void {
     for (const task of this.scheduledTasks) {
-      task.stop();
+      // node-cron 4.6: stop() may return a Promise (background tasks).
+      Promise.resolve(task.stop()).catch((err) => {
+        this.logger.warn(`Failed to stop cron task: ${err}`);
+      });
     }
     this.scheduledTasks = [];
   }
